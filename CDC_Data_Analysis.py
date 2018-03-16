@@ -1,17 +1,18 @@
 # Copyright 2018 Ethan Genser
 
 # Importing packages, modules, and functions.
-import xlwt
+import xlsxwriter
 from os.path import basename
 from datetime import datetime
-import pandas as pd
+
+save_path = 'C:/Users/Ethans Laptop/Desktop/file.xlsx'
 
 def main():
     sheets = 0
     restart = True
     timestamp = datetime.now()
     print_copyright()
-    book = xlwt.Workbook(encoding='utf-8')
+    workbook = xlsxwriter.Workbook(save_path)
 
     while restart:
         # Opens data file.
@@ -21,15 +22,15 @@ def main():
 
         # Reads and collects data from the file.
         print('\nCollecting data...\n')
-        data = get_data(raw_data)
+        causes = get_causes(raw_data)
+        deaths = get_deaths(raw_data)
 
         # Opens a new worksheet. 
         sheets += 1
-        sheet = book.add_sheet('Sheet' + str(sheets))
-        sheet = format_sheet(sheet, timestamp, raw_data)
+        worksheet = workbook.add_worksheet()
 
         # Records collected data in spreadsheet.
-        sheet = record_data(sheet, data)
+        worksheet = record_data(workbook, worksheet, causes, deaths)
 
         # Asks if the user wants to scan another file.
         restart = False
@@ -42,90 +43,84 @@ def main():
                 restart = False
 
     # Saves finished workbook
-    book.save('C:\\Users\\Ethans Laptop\\Desktop\\CDC_' + str(timestamp.month) + '-' + str(timestamp.day) + '-' + str(timestamp.year) + '.xls')
+    workbook.close()
 
-def get_data(raw_data:list)->list:
+def get_causes(raw_data:list)->list:
+    causes = list()
+    cause = ''
+    rec = False
+    line_number = 0
 
-    def get_causes(raw_data:list)->list:
-        causes = list()
+    # Iterates through each line of the file.
+    for line in raw_data:
+        line_number += 1
         cause = ''
-        rec = False
-        line_number = 0
+        # Skips the first line.
+        if line_number < 2:
+            continue
+        # Stops reading when the dividor is reached.
+        if line == '\"---\"\n':
+            break
+
+        # Iterates through each character in the line.
+        for char in line:
+            # Stops recording characters when the stop symbol is reached.
+            if char == '(':
+                rec = False
+            # Records characters.
+            if rec:
+                cause = cause + char
+            # Starts recording characters when the start symbol is reached.
+            if char == '#':
+                rec = True
+
+        # Formats and appends the cause to the list of causes.
+        cause = cause.strip()
+        causes.append(cause)
+
+    return causes
+
+def get_deaths(raw_data:list)->list:
+    deaths = list()
+    total = ''
+    tabs = 0
+    rec = False
+    line_number = 0
 
         # Iterates through each line of the file.
-        for line in raw_data:
-            line_number += 1
-            cause = ''
-            # Skips the first line.
-            if line_number < 2:
-                continue
-            # Stops reading when the dividor is reached.
-            if line == '\"---\"\n':
-                break
-
-            # Iterates through each character in the line.
-            for char in line:
-                # Stops recording characters when the stop symbol is reached.
-                if char == '(':
-                    rec = False
-                # Records characters.
-                if rec:
-                    cause = cause + char
-                # Starts recording characters when the start symbol is reached.
-                if char == '#':
-                    rec = True
-
-            # Formats and appends the cause to the list of causes.
-            cause = cause.strip()
-            causes.append(cause)
-
-        return causes
-    def get_deaths(raw_data:list)->list:
-        deaths = list()
+    for line in raw_data:
+        line_number += 1
         total = ''
         tabs = 0
-        rec = False
-        line_number = 0
+        # Skips the first line.
+        if line_number < 2:
+            continue
+        # Stops reading when the dividor is reached.
+        if line == '\"---\"\n':
+            break
 
-         # Iterates through each line of the file.
-        for line in raw_data:
-            line_number += 1
-            total = ''
-            tabs = 0
-            # Skips the first line.
-            if line_number < 2:
-                continue
-            # Stops reading when the dividor is reached.
-            if line == '\"---\"\n':
-                break
+        # Iterates through each character in the line.
+        for char in line:
+            # Counts the number of tabs since the beginning of the line.
+            if char == '\t':
+                tabs += 1
+            # Starts recording characters when the second tab is reached.
+            if tabs > 2:
+                rec = True
+            # Stops recording characters when the third tab is reached.
+            if tabs > 3:
+                rec = False
+            # Records characters.
+            if rec:
+                total = total + char
 
-            # Iterates through each character in the line.
-            for char in line:
-                # Counts the number of tabs since the beginning of the line.
-                if char == '\t':
-                    tabs += 1
-                # Starts recording characters when the second tab is reached.
-                if tabs > 2:
-                    rec = True
-                # Stops recording characters when the third tab is reached.
-                if tabs > 3:
-                    rec = False
-                # Records characters.
-                if rec:
-                    total = total + char
+        # Formats and appends the total to the list of death totals.
+        total = int(total.strip())
+        deaths.append(total)
 
-            # Formats and appends the total to the list of death totals.
-            total = int(total.strip())
-            deaths.append(total)
+    return deaths
 
-        return deaths
-
-    data = list()
-    data.append(get_causes(raw_data))
-    data.append(get_deaths(raw_data))
-    return data
-
-def format_sheet(sheet:xlwt.Worksheet, timestamp:datetime, raw_data:list)->xlwt.Worksheet:
+def format_sheet(sheet:xlsxwriter.worksheet, timestamp:datetime, raw_data:list)->xlsxwriter.worksheet:
 
     def get_time(raw_data:list)->str:
             time = ''
@@ -159,16 +154,19 @@ def format_sheet(sheet:xlwt.Worksheet, timestamp:datetime, raw_data:list)->xlwt.
     sheet.write(0,1,'Total Fatalities (' + get_time(raw_data) + ')')
     return sheet
 
-def record_data(sheet:xlwt.Worksheet, data:list)->xlwt.Worksheet:
-    x = 0
-    y = 1
-    for column in data:
-        y = 1
-        for row in column:
-            sheet.write(y,x,row)
-            y += 1
-        x += 1
-    return sheet
+def record_data(workbook:xlsxwriter.workbook, worksheet:xlsxwriter.worksheet, causes:list, deaths:list)->xlsxwriter.worksheet:
+    chart = workbook.add_chart({'type': 'bar'})
+    chart.set_y_axis({'name': 'Fatalities'})
+    chart.set_x_axis({'name': 'Year'})
+    chart.set_title({'name': '15 Leading Causes of Death in America'})
+
+    worksheet.write_column(*[0,0], data=causes)
+    worksheet.write_column(*[0,1], data=deaths)
+    chart.add_series({
+    'values': [worksheet.name] + [0,0] + [len(deaths), 1],
+    'name': "Random data",
+    })
+    worksheet.insert_chart('D1', chart)
 
 def print_copyright():
     print('**********************************************')
