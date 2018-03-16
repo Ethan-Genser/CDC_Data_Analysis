@@ -6,6 +6,8 @@ from os.path import basename
 from datetime import datetime
 
 save_path = 'C:/Users/Ethans Laptop/Desktop/file.xlsx'
+years = range(2008,2016)
+data_base_name = 'Cause_of_Death_'
 
 def main():
     sheets = 0
@@ -13,34 +15,22 @@ def main():
     timestamp = datetime.now()
     print_copyright()
     workbook = xlsxwriter.Workbook(save_path)
+    raw_data = []
+    causes = []
+    deaths = []
 
-    while restart:
-        # Opens data file.
-        path = input('\nWhat file what you like to scan?\n>>> ')
-        data_file = open(path, 'r')
-        raw_data = data_file.readlines()
+    for year in years:
+        raw_data.append(open(str(data_base_name) + str(year) + '.txt', 'r').readlines())
 
-        # Reads and collects data from the file.
-        print('\nCollecting data...\n')
-        causes = get_causes(raw_data)
-        deaths = get_deaths(raw_data)
+    # Reads and collects data from the file.
+    print('\nCollecting data...\n')
+    for i in range(0, len(years)):
+        causes.append(get_causes(raw_data[i]))
+        deaths.append(get_deaths(raw_data[i]))
 
-        # Opens a new worksheet. 
-        sheets += 1
-        worksheet = workbook.add_worksheet()
-
-        # Records collected data in spreadsheet.
-        worksheet = record_data(workbook, worksheet, causes, deaths)
-
-        # Asks if the user wants to scan another file.
-        restart = False
-        restart_raw = ''
-        while restart_raw.casefold() != 'y' and restart_raw.casefold() != 'n':
-            restart_raw = input('\nYou you like to scan another file (Y or N)?\n>>>')
-            if restart_raw.casefold() == 'y':
-                restart = True
-            elif restart_raw.casefold() == 'n':
-                restart = False
+    # Opens a new worksheet. 
+    worksheet = workbook.add_worksheet()
+    worksheet = record_data(workbook, worksheet, causes, deaths)
 
     # Saves finished workbook
     workbook.close()
@@ -155,17 +145,27 @@ def format_sheet(sheet:xlsxwriter.worksheet, timestamp:datetime, raw_data:list)-
     return sheet
 
 def record_data(workbook:xlsxwriter.workbook, worksheet:xlsxwriter.worksheet, causes:list, deaths:list)->xlsxwriter.worksheet:
-    chart = workbook.add_chart({'type': 'bar'})
+
+    chart = workbook.add_chart({'type': 'column'})
     chart.set_y_axis({'name': 'Fatalities'})
-    chart.set_x_axis({'name': 'Year'})
+    chart.set_x_axis({'name': 'Cause of Death'})
     chart.set_title({'name': '15 Leading Causes of Death in America'})
 
-    worksheet.write_column(*[0,0], data=causes)
-    worksheet.write_column(*[0,1], data=deaths)
-    chart.add_series({
-    'values': [worksheet.name] + [0,0] + [len(deaths), 1],
-    'name': "Random data",
-    })
+    for i in range(0, len(causes)):
+        worksheet.write_column(*[len(causes) * 2 * i - 2 * len(causes), 0], data=causes[i])
+
+    for i in range(0, len(deaths)):
+        worksheet.write_column(*[len(deaths)* 2 * i - 2 *len(deaths), 1], data=deaths[i])
+
+    for year in years:
+        a = ((year - years[0]) * 16) + 1
+        b = ((year - years[0]) * 16) + len(years)*2
+        test = '=Sheet1!$A$' +  str(a) + ':$A$' + str(b)
+        chart.add_series({
+        'categories': '=Sheet1!$A$' +  str(a) + ':$A$' + str(b),
+        'values': '=Sheet1!$B$' +  str(a) + ':$B$' + str(b),
+        'name': str(year),
+        })
     worksheet.insert_chart('D1', chart)
 
 def print_copyright():
