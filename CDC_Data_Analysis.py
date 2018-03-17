@@ -6,7 +6,7 @@ from os.path import basename
 from datetime import datetime
 
 save_path = 'C:/Users/Ethans Laptop/Desktop/file.xlsx'
-years = range(2008,2016)
+years = range(2008,2017)
 data_base_name = 'Cause_of_Death_'
 
 def main():
@@ -152,18 +152,19 @@ def record_data(workbook:xlsxwriter.workbook, worksheet:xlsxwriter.worksheet, ca
     chart.set_title({'name': '15 Leading Causes of Death in America'})
 
     for i in range(0, len(causes)):
-        worksheet.write_column(*[len(causes) * 2 * i - 2 * len(causes), 0], data=causes[i])
+        test = len(causes[i])
+        worksheet.write_column(*[i * (len(causes[i]) + 1), 0], data=causes[i])
 
     for i in range(0, len(deaths)):
-        worksheet.write_column(*[len(deaths)* 2 * i - 2 *len(deaths), 1], data=deaths[i])
+        worksheet.write_column(*[i * (len(deaths[i]) + 1), 1], data=deaths[i])
 
     for year in years:
-        a = ((year - years[0]) * 16) + 1
-        b = ((year - years[0]) * 16) + len(years)*2
-        test = '=Sheet1!$A$' +  str(a) + ':$A$' + str(b)
+        top = ((year - years[0]) * (len(causes[0]) + 1)) + 1
+        bottom = ((year - years[0]) * (len(causes[0]) + 1)) + len(causes[0])
+        test = '=Sheet1!$A$' +  str(top) + ':$A$' + str(bottom)
         chart.add_series({
-        'categories': '=Sheet1!$A$' +  str(a) + ':$A$' + str(b),
-        'values': '=Sheet1!$B$' +  str(a) + ':$B$' + str(b),
+        'categories': '=Sheet1!$A$' +  str(top) + ':$A$' + str(bottom),
+        'values': '=Sheet1!$B$' +  str(top) + ':$B$' + str(bottom),
         'name': str(year),
         })
     worksheet.insert_chart('D1', chart)
