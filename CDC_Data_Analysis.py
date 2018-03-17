@@ -1,38 +1,36 @@
-# Copyright 2018 Ethan Genser
+# Copyright 2018 Ethan P. Genser
 
 # Importing packages, modules, and functions.
 import xlsxwriter
 from os.path import basename
 
 # Constants
-save_path = 'C:/Users/Ethans Laptop/Desktop/CDC_Data.xlsx'
-years = range(2008,2017)
-data_base_name = 'Cause_of_Death_'
+SAVE_PATH = 'C:/Users/Ethans Laptop/Desktop/CDC_Data.xlsx'
+YEARS = range(2008,2017)
+DATA_BASE_NAME = 'Cause_of_Death_'
 
 # The main entry point for the program.
 def main():
-    sheets = 0
-    restart = True
-    workbook = xlsxwriter.Workbook(save_path)
-    raw_data = []
-    causes = []
-    deaths = []
-    worksheet = workbook.add_worksheet()
+    workbook = xlsxwriter.Workbook(SAVE_PATH)
+    raw_data = list()
+    causes = list()
+    deaths = list()
 
     # Displays copyright info.
     print_copyright()
 
     # Opens and reads each data file.
-    for year in years:
-        raw_data.append(open(str(data_base_name) + str(year) + '.txt', 'r').readlines())
+    for year in YEARS:
+        raw_data.append(open(str(DATA_BASE_NAME) + str(year) + '.txt', 'r').readlines())
 
     # Collects data from each file.
     print('\nCollecting data...\n')
-    for i in range(0, len(years)):
+    for i in range(0, len(YEARS)):
         causes.append(get_causes(raw_data[i]))
         deaths.append(get_deaths(raw_data[i]))
 
     # Records data in the spreadsheet.
+    worksheet = workbook.add_worksheet()
     worksheet = record_data(workbook, worksheet, causes, deaths)
 
     # Saves finished workbook.
@@ -128,13 +126,13 @@ def record_data(workbook:xlsxwriter.workbook, worksheet:xlsxwriter.worksheet, ca
         chart.set_title({'name': '15 Leading Causes of Death in America'})
 
         # Adds a new data series to the chart for every year.
-        for year in years:
+        for year in YEARS:
 
             # Finds the top coordinate of the applicable data.
-            top = ((year - years[0]) * (len(causes[0]) + 1)) + 1
+            top = ((year - YEARS[0]) * (len(causes[0]) + 1)) + 1
 
             # Finds the bottom coordinate of the applicable data.
-            bottom = ((year - years[0]) * (len(causes[0]) + 1)) + len(causes[0])
+            bottom = ((year - YEARS[0]) * (len(causes[0]) + 1)) + len(causes[0])
 
             # Creates the new series.
             chart.add_series({
