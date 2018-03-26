@@ -1,5 +1,5 @@
 # CDC_Data_Analysis
-Visualizes datasets provided by the Center for Disease Control and Prevention with Excel spreadsheets.
+Visualizes datasets provided by the Center for Disease Control and Prevention with xlsx spreadsheets.
 
 ![alt text](https://github.com/GHC-0/CDC_Data_Analysis/blob/master/Info/Screenshot.png)
 
