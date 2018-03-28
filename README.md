@@ -20,6 +20,7 @@ If you choose to use extra datasets not provided by the repository, be sure to c
 
 ## Running
 
+To run this program, move all the datasets you wish to analyze to the same folder as `CDC_Data_Analysis.py`. Run the program from your python command terminal. The program will create an xlsx file on your desktop contain the collected data.
 
 ## Authors
 
